@@ -1,0 +1,310 @@
+{
+  "info": {
+    "name": "LifeMate API",
+    "description": "LifeMate REST API (see docs/API_CONTRACT.md). Run 'Auth > Login (demo)' first: its test script stores the tokens used by every other request. Money is in poisha (minor units): 125050 = ৳1,250.50.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:4000/api/v1" },
+    { "key": "accessToken", "value": "" },
+    { "key": "refreshToken", "value": "" },
+    { "key": "taskId", "value": "" },
+    { "key": "expenseId", "value": "" },
+    { "key": "billId", "value": "" },
+    { "key": "listId", "value": "" },
+    { "key": "itemId", "value": "" },
+    { "key": "noteId", "value": "" },
+    { "key": "today", "value": "2026-10-11" },
+    { "key": "month", "value": "2026-10" }
+  ],
+  "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }] },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "auth": { "type": "noauth" },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('201 Created', () => pm.response.to.have.status(201));",
+            "const d = pm.response.json().data;",
+            "pm.test('no password hash leaked', () => pm.expect(d.user.passwordHash).to.be.undefined);",
+            "pm.collectionVariables.set('accessToken', d.accessToken);",
+            "pm.collectionVariables.set('refreshToken', d.refreshToken);"
+          ] } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/auth/register",
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Postman Tester\",\n  \"email\": \"tester-{{$timestamp}}@example.com\",\n  \"password\": \"Password123\"\n}" }
+          }
+        },
+        {
+          "name": "Login (demo)",
+          "auth": { "type": "noauth" },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('200 OK', () => pm.response.to.have.status(200));",
+            "const d = pm.response.json().data;",
+            "pm.collectionVariables.set('accessToken', d.accessToken);",
+            "pm.collectionVariables.set('refreshToken', d.refreshToken);"
+          ] } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/auth/login",
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"demo@lifemate.app\",\n  \"password\": \"LifeMate2026\"\n}" }
+          }
+        },
+        {
+          "name": "Login (wrong password → 401)",
+          "auth": { "type": "noauth" },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('401 with generic message', () => { pm.response.to.have.status(401); pm.expect(pm.response.json().error.code).to.eql('INVALID_CREDENTIALS'); });"
+          ] } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/auth/login",
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"demo@lifemate.app\",\n  \"password\": \"wrong-password1\"\n}" }
+          }
+        },
+        {
+          "name": "Refresh (rotates token)",
+          "auth": { "type": "noauth" },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('200 OK', () => pm.response.to.have.status(200));",
+            "const d = pm.response.json().data;",
+            "pm.collectionVariables.set('accessToken', d.accessToken);",
+            "pm.collectionVariables.set('refreshToken', d.refreshToken);"
+          ] } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/auth/refresh",
+            "body": { "mode": "raw", "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}" }
+          }
+        },
+        {
+          "name": "Protected route without token → 401",
+          "auth": { "type": "noauth" },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('401', () => pm.response.to.have.status(401));"] } }],
+          "request": { "method": "GET", "url": "{{baseUrl}}/users/me" }
+        },
+        {
+          "name": "Logout",
+          "auth": { "type": "noauth" },
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/auth/logout",
+            "body": { "mode": "raw", "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        { "name": "Me", "request": { "method": "GET", "url": "{{baseUrl}}/users/me" } },
+        {
+          "name": "Update name",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/users/me",
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Sifat\"\n}" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Dashboard",
+      "item": [{ "name": "Today", "request": { "method": "GET", "url": "{{baseUrl}}/dashboard?today={{today}}" } }]
+    },
+    {
+      "name": "Tasks",
+      "item": [
+        { "name": "List open", "request": { "method": "GET", "url": "{{baseUrl}}/tasks?status=open" } },
+        { "name": "List completed (paged)", "request": { "method": "GET", "url": "{{baseUrl}}/tasks?status=completed&limit=20" } },
+        {
+          "name": "Create",
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('201', () => pm.response.to.have.status(201));", "pm.collectionVariables.set('taskId', pm.response.json().data.id);"] } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/tasks",
+            "body": { "mode": "raw", "raw": "{\n  \"title\": \"Submit SDP report\",\n  \"priority\": \"high\",\n  \"dueDate\": \"{{today}}\",\n  \"dueTime\": \"17:00\",\n  \"recurrence\": \"none\",\n  \"reminderMinutesBefore\": 30\n}" }
+          }
+        },
+        {
+          "name": "Create invalid (time without date → 400)",
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('400', () => pm.response.to.have.status(400));"] } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/tasks",
+            "body": { "mode": "raw", "raw": "{\n  \"title\": \"Broken\",\n  \"dueTime\": \"10:00\"\n}" }
+          }
+        },
+        {
+          "name": "Update",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/tasks/{{taskId}}",
+            "body": { "mode": "raw", "raw": "{\n  \"title\": \"Submit final SDP report\"\n}" }
+          }
+        },
+        {
+          "name": "Complete",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/tasks/{{taskId}}/complete",
+            "body": { "mode": "raw", "raw": "{\n  \"today\": \"{{today}}\"\n}" }
+          }
+        },
+        { "name": "Reopen (undo)", "request": { "method": "POST", "url": "{{baseUrl}}/tasks/{{taskId}}/reopen" } },
+        { "name": "Delete", "request": { "method": "DELETE", "url": "{{baseUrl}}/tasks/{{taskId}}" } }
+      ]
+    },
+    {
+      "name": "Expenses & Budgets",
+      "item": [
+        {
+          "name": "Create expense",
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('201', () => pm.response.to.have.status(201));", "pm.collectionVariables.set('expenseId', pm.response.json().data.id);", "pm.test('alerts array present', () => pm.expect(pm.response.json().alerts).to.be.an('array'));"] } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/expenses",
+            "body": { "mode": "raw", "raw": "{\n  \"amount\": 25000,\n  \"category\": \"food\",\n  \"note\": \"Lunch\",\n  \"date\": \"{{today}}\"\n}" }
+          }
+        },
+        {
+          "name": "Create expense (float amount → 400)",
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('400', () => pm.response.to.have.status(400));"] } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/expenses",
+            "body": { "mode": "raw", "raw": "{\n  \"amount\": 12.5,\n  \"category\": \"food\",\n  \"date\": \"{{today}}\"\n}" }
+          }
+        },
+        { "name": "List month", "request": { "method": "GET", "url": "{{baseUrl}}/expenses?month={{month}}&limit=50" } },
+        { "name": "Month summary", "request": { "method": "GET", "url": "{{baseUrl}}/expenses/summary?month={{month}}" } },
+        {
+          "name": "Update expense",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/expenses/{{expenseId}}",
+            "body": { "mode": "raw", "raw": "{\n  \"amount\": 30000\n}" }
+          }
+        },
+        { "name": "Delete expense", "request": { "method": "DELETE", "url": "{{baseUrl}}/expenses/{{expenseId}}" } },
+        { "name": "Get budget plan", "request": { "method": "GET", "url": "{{baseUrl}}/budgets/{{month}}" } },
+        {
+          "name": "Save budget plan",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/budgets/{{month}}",
+            "body": { "mode": "raw", "raw": "{\n  \"overall\": 2500000,\n  \"categories\": [\n    { \"category\": \"food\", \"limit\": 800000 },\n    { \"category\": \"transport\", \"limit\": 250000 }\n  ]\n}" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Bills",
+      "item": [
+        { "name": "List unpaid", "request": { "method": "GET", "url": "{{baseUrl}}/bills?status=unpaid" } },
+        {
+          "name": "Create bill",
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('201', () => pm.response.to.have.status(201));", "pm.collectionVariables.set('billId', pm.response.json().data.id);"] } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/bills",
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Internet (Link3)\",\n  \"amount\": 120000,\n  \"dueDate\": \"2026-10-31\",\n  \"recurrence\": \"monthly\",\n  \"reminderDaysBefore\": 2\n}" }
+          }
+        },
+        {
+          "name": "Pay bill (logs expense)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/bills/{{billId}}/pay",
+            "body": { "mode": "raw", "raw": "{\n  \"dueDate\": \"2026-10-31\",\n  \"paidOn\": \"{{today}}\",\n  \"logExpense\": true\n}" }
+          }
+        },
+        { "name": "Undo payment", "request": { "method": "POST", "url": "{{baseUrl}}/bills/{{billId}}/undo-payment" } },
+        { "name": "Delete bill", "request": { "method": "DELETE", "url": "{{baseUrl}}/bills/{{billId}}" } }
+      ]
+    },
+    {
+      "name": "Grocery lists",
+      "item": [
+        { "name": "List my lists", "request": { "method": "GET", "url": "{{baseUrl}}/grocery-lists" } },
+        {
+          "name": "Create list",
+          "event": [{ "listen": "test", "script": { "exec": ["pm.collectionVariables.set('listId', pm.response.json().data.id);"] } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/grocery-lists",
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Weekly bazar\"\n}" }
+          }
+        },
+        {
+          "name": "Add item",
+          "event": [{ "listen": "test", "script": { "exec": ["pm.collectionVariables.set('itemId', pm.response.json().data.id);"] } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/grocery-lists/{{listId}}/items",
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Miniket rice\",\n  \"quantity\": 5,\n  \"unit\": \"kg\"\n}" }
+          }
+        },
+        {
+          "name": "Mark purchased",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/grocery-lists/{{listId}}/items/{{itemId}}",
+            "body": { "mode": "raw", "raw": "{\n  \"purchased\": true\n}" }
+          }
+        },
+        { "name": "List detail", "request": { "method": "GET", "url": "{{baseUrl}}/grocery-lists/{{listId}}" } },
+        {
+          "name": "Share with flatmate",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/grocery-lists/{{listId}}/members",
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"flatmate@lifemate.app\"\n}" }
+          }
+        },
+        { "name": "Clear purchased", "request": { "method": "POST", "url": "{{baseUrl}}/grocery-lists/{{listId}}/clear-purchased" } },
+        { "name": "Delete list", "request": { "method": "DELETE", "url": "{{baseUrl}}/grocery-lists/{{listId}}" } }
+      ]
+    },
+    {
+      "name": "Notes",
+      "item": [
+        { "name": "List notes", "request": { "method": "GET", "url": "{{baseUrl}}/notes" } },
+        {
+          "name": "Create note with checklist",
+          "event": [{ "listen": "test", "script": { "exec": ["pm.collectionVariables.set('noteId', pm.response.json().data.id);"] } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/notes",
+            "body": { "mode": "raw", "raw": "{\n  \"title\": \"Exam prep\",\n  \"checklist\": [{ \"text\": \"DBMS\" }, { \"text\": \"OS\" }]\n}" }
+          }
+        },
+        { "name": "Delete note", "request": { "method": "DELETE", "url": "{{baseUrl}}/notes/{{noteId}}" } }
+      ]
+    }
+  ]
+}

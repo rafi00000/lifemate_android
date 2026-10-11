@@ -1,0 +1,39 @@
+# Dependencies
+node_modules/
+
+# Environment files (secrets); only the examples are committed
+.env
+.env.*
+!.env.example
+
+# Build output
+server/dist/
+mobile/dist/
+mobile/web-build/
+*.tsbuildinfo
+*.apk
+*.aab
+
+# Local data
+server/.data/
+
+# Expo / React Native (generated)
+mobile/.expo/
+mobile/expo-env.d.ts
+mobile/android/
+mobile/ios/
+.kotlin/
+.metro-health-check*
+
+# Signing keys
+*.jks
+*.keystore
+*.p8
+*.p12
+*.key
+*.pem
+
+# Logs and OS files
+*.log
+coverage/
+.DS_Store
