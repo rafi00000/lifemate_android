@@ -1,8 +1,9 @@
 import type { BottomTabBarProps } from 'expo-router/js-tabs';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Pressable, View, type LayoutChangeEvent } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSpotlight } from '@/features/onboarding/spotlight-store';
 import { duration, makeStyles, spring, TAB_BAR_HEIGHT, useTheme } from '@/theme';
 import { haptics } from '@/utils/haptics';
 import { Icon, type IconName } from '../ui/icon';
@@ -26,6 +27,8 @@ export function TabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const styles = useStyles();
   const insets = useSafeAreaInsets();
   const [width, setWidth] = useState(0);
+  const barRef = useRef<View>(null);
+  const setTabBarRect = useSpotlight((s) => s.setTabBar);
   const count = state.routes.length;
   const slot = width / count;
   const x = useSharedValue(0);
@@ -38,7 +41,15 @@ export function TabBar({ state, descriptors, navigation }: BottomTabBarProps) {
 
   return (
     <View pointerEvents="box-none" style={[styles.wrap, { paddingBottom: Math.max(insets.bottom, 10) }]}>
-      <View style={styles.bar} onLayout={(e: LayoutChangeEvent) => setWidth(e.nativeEvent.layout.width)} accessibilityRole="tablist">
+      <View
+        ref={barRef}
+        style={styles.bar}
+        onLayout={(e: LayoutChangeEvent) => {
+          setWidth(e.nativeEvent.layout.width);
+          // Window position lets the spotlight tour highlight individual tabs.
+          barRef.current?.measureInWindow((x, y, w, h) => setTabBarRect({ x, y, width: w, height: h }));
+        }}
+        accessibilityRole="tablist">
         {slot > 0 ? (
           <Animated.View style={[styles.indicatorSlot, { width: slot }, indicator]}>
             <View style={styles.indicator} />

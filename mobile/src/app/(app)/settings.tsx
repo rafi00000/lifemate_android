@@ -1,5 +1,5 @@
 import Constants from 'expo-constants';
-import { useFocusEffect } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState, type ReactNode } from 'react';
 import { Linking, Platform, Pressable, View } from 'react-native';
 import { useConfirm } from '@/components/feedback/dialog';
@@ -105,6 +105,12 @@ export default function SettingsScreen() {
             ]}
           />
         </View>
+      </Group>
+
+      <Group title="Help">
+        <Row icon="compass" label="Help & guide" onPress={() => router.push('/guide')} />
+        <Divider inset={52} />
+        <Row icon="play-circle" label="Replay welcome tour" onPress={() => router.push('/welcome-tour')} />
       </Group>
 
       <Group title="About">

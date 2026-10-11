@@ -7,6 +7,7 @@ import { TextField } from '@/components/ui/text-field';
 import { AuthLayout, FooterLink, FormError } from '@/features/auth/auth-form';
 import { toApiError } from '@/services/api/errors';
 import { useAuth } from '@/store/auth';
+import { usePreferences } from '@/store/preferences';
 import { makeStyles, useTheme } from '@/theme';
 import { passwordStrength, validateEmail, validateName, validateNewPassword } from '@/utils/validation';
 
@@ -14,6 +15,7 @@ const STRENGTH_LABEL = ['', 'Too weak', 'Good', 'Strong'] as const;
 
 export default function SignUpScreen() {
   const register = useAuth((s) => s.register);
+  const setWelcomeTourPending = usePreferences((s) => s.setWelcomeTourPending);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -31,6 +33,8 @@ export default function SignUpScreen() {
     setSubmitting(true);
     try {
       await register(name.trim(), email.trim().toLowerCase(), password);
+      // Brand-new accounts see the welcome tour once.
+      setWelcomeTourPending(true);
     } catch (err) {
       const apiErr = toApiError(err);
       if (apiErr.kind === 'conflict') setErrors({ email: apiErr.message });

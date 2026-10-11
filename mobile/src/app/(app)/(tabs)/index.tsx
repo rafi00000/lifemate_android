@@ -308,6 +308,7 @@ function Groceries({ data }: { data: Dashboard }) {
 function GettingStarted({ onAddTask, onAddExpense }: { onAddTask: () => void; onAddExpense: () => void }) {
   const styles = useStyles();
   const steps = [
+    { icon: 'compass' as const, label: 'Take a 1-minute tour', onPress: () => router.push('/welcome-tour') },
     { icon: 'check-circle' as const, label: 'Add your first task', onPress: onAddTask },
     { icon: 'target' as const, label: 'Set a monthly budget', onPress: () => router.push('/budget') },
     { icon: 'credit-card' as const, label: 'Log today’s spending', onPress: onAddExpense },

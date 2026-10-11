@@ -13,26 +13,16 @@ BUBT CSE project (intake 47/3).
 
 ## 1. Run locally (development)
 
-Requires Node.js 20+.
+Requires Node.js 20+. From the project root:
 
 ```bash
-npm --prefix server install
-npm --prefix mobile install
+npm install
+npm run dev
 ```
 
-Terminal 1 starts the API with a built-in local database and a demo account:
+`npm install` installs the root, `server` and `mobile` packages. `npm run dev` starts the API (with a built-in local database and demo account) and the Expo app in one terminal.
 
-```bash
-npm --prefix server run dev:memory
-```
-
-Terminal 2 starts the app:
-
-```bash
-npm --prefix mobile start
-```
-
-Install **Expo Go** from the Play Store, connect the phone to the same Wi-Fi as the PC, and scan the QR code. The app finds the API on the PC automatically. If it can't connect, allow Node.js through Windows Firewall on private networks.
+Install **Expo Go** from the Play Store, connect the phone to the same Wi-Fi as the PC, and scan the QR code. Expo's keys (`r` reload, `w` web) work in the same terminal; `Ctrl + C` stops both. The app finds the API on the PC automatically. If it can't connect, allow Node.js through Windows Firewall on private networks.
 
 Demo login: `demo@lifemate.app` / `LifeMate2026`.
 
@@ -76,19 +66,23 @@ Run these inside `mobile/`.
    ```bash
    npx eas-cli@latest env:push preview --path .env
    ```
-5. Build (answer **yes** to generating an Android keystore):
+5. Build from the project root (answer **yes** to generating an Android keystore):
    ```bash
-   npx eas-cli@latest build -p android --profile preview
+   npm run build:apk
    ```
 6. After about 10–20 minutes, EAS shows a download link and QR code for the `.apk`. Open it on the phone and allow "Install unknown apps".
 
 If the API URL changes, edit `.env`, repeat step 4 with `--force`, and build again.
 
-## Checks
+## Scripts (run from the project root)
 
-```bash
-npm --prefix server test
-npm --prefix mobile test
-npm --prefix mobile run typecheck
-npm --prefix mobile run lint
-```
+| Command | What it does |
+|---|---|
+| `npm install` | Install everything (root, server, mobile) |
+| `npm run dev` | API with local demo database + Expo app (phone via Expo Go) |
+| `npm run dev:web` | Same, but opens the app in the browser |
+| `npm run dev:atlas` | API using `MONGODB_URI` from `server/.env` + Expo app |
+| `npm run seed` | Add demo data to the database in `server/.env` |
+| `npm test` | Server and mobile tests |
+| `npm run check` | Typecheck, lint and all tests |
+| `npm run build:apk` | Build the Android APK with EAS (see step 3) |

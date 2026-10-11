@@ -1,0 +1,22 @@
+{
+  "name": "lifemate",
+  "version": "1.0.0",
+  "private": true,
+  "description": "LifeMate: integrated daily life management app (Expo + Express + MongoDB)",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "postinstall": "npm --prefix server install && npm --prefix mobile install",
+    "dev": "concurrently -n api,app -c green,cyan --handle-input --default-input-target app \"npm --prefix server run dev:memory\" \"npm --prefix mobile start\"",
+    "dev:web": "concurrently -n api,web -c green,cyan \"npm --prefix server run dev:memory\" \"npm --prefix mobile run web\"",
+    "dev:atlas": "concurrently -n api,app -c green,cyan --handle-input --default-input-target app \"npm --prefix server run dev\" \"npm --prefix mobile start\"",
+    "seed": "npm --prefix server run seed",
+    "test": "npm --prefix server test && npm --prefix mobile test",
+    "check": "npm --prefix server run typecheck && npm --prefix mobile run typecheck && npm --prefix mobile run lint && npm test",
+    "build:apk": "cd mobile && npx eas-cli@latest build -p android --profile preview"
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.6"
+  }
+}
